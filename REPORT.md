@@ -522,6 +522,30 @@ GW1 的 `MIN_X_STEP` 守卫在 ODE 模式下只是 `break`（不设 endFunc）�
 这就是"一步穿墙"。GW2 的弦长恒为 0.01，**结构上就不可能出现这种隧穿**。
 同一条"守卫只 break"的代码，在 `y'=-1/y` 那里表现为乱跳（§5.4），在这里表现为穿墙。
 
+**这条不对称在上游源码里是死代码，不是设计。** 上游 `catabriga/graphwar` 把三种模式写成三个
+几乎重复的方法（`processFunctionRange` / `processRK4Range` / `processRK42Range`），守卫的写法不同：
+
+```java
+// 普通模式：守卫在循环体里 —— 能正常触发
+for (int j = 0; 弦长² > 0.001; j++) {
+    if (dx > 1e-5) { tempStep /= 2; 重算; }
+    else           { endFunc = true; break; }        // ← 可达
+}
+if (endFunc) { numSteps = i; break; }
+
+// ODE 模式：守卫被提到了 for 头部 —— 循环体里那个 else 永远进不去
+for (int j = 0; 弦长² > 0.001 && dx > 1e-5; j++) {
+    if (dx > 1e-5) { tempStep /= 2; 重算; }
+    else           { endFunc = true; break; }        // ← 不可达（头部已保证 dx > 1e-5）
+}
+if (endFunc) { numSteps = i; break; }                 // ← 永远不会执行
+```
+
+也就是说作者**本来是想中止的**（`endFunc = true` 就写在那儿），但把同样的条件又搬到了 for 头部，
+结果 `dx` 触底时循环只是"正常结束"，那个超大步长的点被原样留下。
+**这是一个复制粘贴造成的 dead-code bug，不是有意设计**；GW2 重写时把三种模式统一成"解不出就终止"，
+正好把这个 bug 抹掉了，也侧面说明作者的本意一直是中止。
+
 **(d) 对 floor 文章的结论：`ε` 的下限可以直接由判据算出，两代差 ~8 个数量级**
 
 floor 文章给的连续化技巧是把 `cot` 换成 `sin(2x)/(1-cos(2x)+ε)`，

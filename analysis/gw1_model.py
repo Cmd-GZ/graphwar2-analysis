@@ -1,6 +1,12 @@
-"""Faithful port of the numerical part of Graphwar 1's Function.processRange().
+"""Faithful port of the numerical part of Graphwar 1's trajectory generation.
 
-Source: https://github.com/Cmd-GZ/graphwar/blob/optimize/Function/src/Graphwar/Function.java
+Primary source (upstream, authoritative):
+    https://github.com/catabriga/graphwar/blob/master/src/Graphwar/Function.java
+    (processFunctionRange / processRK4Range / processRK42Range -- three near-duplicate
+     methods; the ODE ones hoist the min-x-step guard into the loop header, which makes
+     their `endFunc = true` branch unreachable, hence "ODE accepts an oversized step")
+Secondary source (a cleaned-up fork of the same code):
+    https://github.com/Cmd-GZ/graphwar/blob/optimize/Function/src/Graphwar/Function.java
 Constants from GraphServer/Constants.java.
 
 LICENCE: GPL-3.0-or-later.
