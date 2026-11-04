@@ -588,14 +588,27 @@ GW1 的阈值正好复现文章里 "about 0.0007" 的经验值（6.5e-4 过、6e
 
 stripped 二进制没有符号，所以采用三条腿：
 
-1. **`.eh_frame` 恢复函数边界**：解析 `.eh_frame_hdr`/`.eh_frame` 得到 13430 个真实函数
-   （Ghidra 的启发式函数识别在这个二进制上不准，反而 `.eh_frame` 是编译器给的，最可靠）。
+1. **`.eh_frame` 恢复函数边界** —— ⚠ **本条已被证伪，见下方更正**。
 2. **capstone 建立 rip-relative 交叉引用索引**，再用 panic 位置字符串
    （`src/graphwar_path_calculator.rs:86` 等）把代码定位到源文件与行号。
 3. **unicorn 指令级模拟器当“预言机”**：直接把 `.so` 映射进 unicorn，
    把 `calculate_path` / `eval` / `parse` 当普通函数调用，读回结果。
    （需要 hook 掉 `__rust_alloc/realloc`、`memcpy`、`bcmp`、`getrandom`、
    `posix_memalign`、`__tls_get_addr` 等少数几个外部符号。）
+
+> **更正（2026-11）**：第 1 条所述的 `.eh_frame` 函数表**是坏的**。
+> 与 Ghidra 12.1.4 的函数边界交叉比对后发现：
+>
+> - `analysis/funcstarts.pkl`（13430 条）与 Ghidra 的函数入口（13503 条）**交集只有 2 条**；
+> - 该表里的地址多数不是指令边界（例如 `0x4b1784` 处根本没有指令），
+>   且最大值 `0x969054` **超出 `.text` 末尾 `0x94eb84`**；
+> - Ghidra 的入口则确实是函数序言（如 `0x4b1800` = `push r15; push r14`）。
+>
+> 因此：**函数边界以 Ghidra 为准**，坐标换算是 `Ghidra 地址 = ELF 虚地址 + 0x100000`
+> （13503 个函数里 13263 个落在 `.text` 的换算区间内）。
+> 这不影响本文 §0–§5 的曲线算法结论——那些是用**函数地址直接对拍**得到的，
+> 不依赖函数表；但任何"函数个数 / 模块归属"类统计都需要按 Ghidra 的表重做。
+> 详细记录见复原子仓库的 `docs/02-module-map.md` §12。
 
 然后用**差分测试**确认复刻完全一致：
 

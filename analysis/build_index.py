@@ -1,3 +1,21 @@
+"""Build a capstone instruction index and a rip-relative/imm xref index.
+
+NOTE (2026-11): `funcstarts.pkl` in this directory (derived from .eh_frame) is
+UNRELIABLE and must not be used to attribute code to functions.  Cross-checks:
+
+  * its 13430 entries intersect Ghidra's 13503 function entries in only 2 places;
+  * most of its addresses are not instruction boundaries (e.g. 0x4b1784 has no
+    instruction), and its maximum 0x969054 lies beyond .text end 0x94eb84;
+  * Ghidra's entries are genuine prologues (0x4b1800 = push r15; push r14).
+
+Use Ghidra's function list instead, converting with
+    Ghidra address = ELF virtual address + 0x100000
+(13263 of 13503 Ghidra functions fall inside the converted .text range).
+
+The xref/instruction indexes this script builds are unaffected: they contain
+real instruction addresses.  See REPORT.md section 6 and the reconstruction
+repo's docs/02-module-map.md section 12.
+"""
 import sys, struct, bisect, pickle, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from elf import Elf
