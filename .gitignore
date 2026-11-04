@@ -51,3 +51,13 @@ __pycache__/
 *.swp
 .DS_Store
 Thumbs.db
+
+# Godot 运行时目录与试验项目（本地产物，不入库）
+.godot-cache/
+.godot-config/
+.godot-data/
+godot-probe/
+godot-ref/
+godot-rsc/
+godot-live/
+godot-dist/
