@@ -293,20 +293,16 @@ def _div(a, b):
 def _log10(v):
     if _nan(v):
         return v
-    if v < 0.0:
-        return float('nan')
-    if v == 0.0:
-        return float('-inf')
+    if v <= 0.0:
+        return float('nan')     # 0 与 -0 都走 NaN：与真二进制一致（不是 -inf）
     return math.log10(v)
 
 
 def _log(v):
     if _nan(v):
         return v
-    if v < 0.0:
-        return float('nan')
-    if v == 0.0:
-        return float('-inf')
+    if v <= 0.0:
+        return float('nan')     # 同上
     return math.log(v)
 
 
