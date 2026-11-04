@@ -691,7 +691,8 @@ graphwar_curve.py        复刻实现（唯一需要的东西）
 REPORT.md                本报告
 analysis/
   elf.py dz.py build_index.py   ELF 解析 + capstone 反汇编 + rip-relative 交叉引用索引
-  fde.pkl fdes.pkl funcstarts.pkl relocs.pkl   .eh_frame 函数边界 / 重定位表（已生成）
+  fde.pkl fdes.pkl relocs.pkl   重定位表（已生成，**可用**）
+  funcstarts.pkl                .eh_frame 函数起点 —— **已证伪，勿用于归属**，见 §6 更正
   emu.py gwemu.py               unicorn 模拟器（把 .so 当库调用，做差分测试的“预言机”）
   parser_model.py path_calculator.py   早期单独验证用的模型（现已合并进 graphwar_curve.py）
   difftest.py fuzz.py difftest_parser.py final_verify.py   差分测试
@@ -699,9 +700,14 @@ analysis/
   decomp_*.c                   Ghidra 反编译输出（关键函数）——**不入库**，见下
   pck/                         Graphwar.pck 解包结果（52 个 .gdc 全是 UI 脚本）——**不入库**
 docs/curves.png spacing.png   复刻实现画出的曲线
-tools/                        分析用的工具链（Ghidra 12.2 + 脚本），**可以整个删掉**
+tools/                        分析用的工具链（Ghidra 12.2 用于本文的 DumpAt 脚本；
+                              另装 12.1.4 供 REA 使用，两者独立），**可以整个删掉**
 .venv/                        capstone / unicorn / zstandard / matplotlib
 ```
+
+> **实现与玩法文档不在这里**：曲线以外的逆向（坐标系、碰撞掩膜、事件协议、
+> 生命与回合、间接派发）在独立仓库 `Cmd-GZ/graphwar2` 的 `docs/` 下，
+> 从 `docs/00-status.md` 看起。本报告只负责"这条曲线为什么是这样"的论证。
 
 重建索引（约 2 分钟）：
 
