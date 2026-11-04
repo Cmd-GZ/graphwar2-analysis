@@ -61,7 +61,49 @@ Do not "fix" that by committing the binary.
 | parser quirks | `^` is **left**-associative; `log` = log10; `pi`/`π`/`n` = π; implicit multiplication; `+` fills missing operands with `CONST 0` |
 | dead feature | the third variable `y'` is passed as `0` at **all 7** evaluator call sites |
 
-Ghidra image base is `0x100000`: file address `0x3c2530` is Ghidra address `0x4c2530`.
+Ghidra/REA address = ELF virtual address + `0x100000`
+(file address `0x3c2530` is Ghidra address `0x4c2530`).
+Reading raw bytes at a `_DAT_xxxx` seen in decompiled output requires subtracting
+`0x100000`; forgetting this silently yields garbage.
+
+**`analysis/funcstarts.pkl` is WRONG — do not use it.** It is an `.eh_frame` parse whose
+13430 entries intersect Ghidra's 13503 function entries in only 2 places, and many of its
+addresses are not instruction boundaries at all (its max value lies past `.text` end).
+Use the Ghidra-derived table `analysis/funcstarts_ghidra_va.pkl` (already converted to
+virtual-address space) instead. See REPORT §6 and the reconstruction repo's docs/02 §12.
+
+## The reconstruction sub-repo (`gw2-rebuild/`)
+
+A **separate git repository** (`Cmd-GZ/graphwar2`) holds the source reconstruction and the
+per-topic write-ups. Rules:
+
+* It is git-ignored by *this* repo and must **never** be committed here. Verify with
+  `git ls-files | grep gw2-rebuild` (must print nothing).
+* `rsc/` (assets extracted from `Graphwar.pck`) is binary-derived and git-ignored there too;
+  only the manifest is committed. Do not push game assets to a public remote.
+* Its `docs/00-status.md` is the one-page state of the world; `docs/15-end-to-end.md` walks
+  a shot from typed text to a dead soldier; `docs/16-reproduce.md` is the verification recipe.
+
+## REA toolchain (installed 2026-11)
+
+* `rea-agents@6.8.0` lives in `.rea-runtime/`; registered for DeepSeek Harness in
+  `~/.dsh/cordis.patch.yml`.
+* Ghidra **12.1.4 only** (REA refuses 12.2 — version policy is pinned to `12.1.x`):
+  `GHIDRA_INSTALL_DIR=tools/ghidra_12.1.4_PUBLIC`, `JAVA_HOME=/usr/lib/jvm/java-25-openjdk`.
+* First import ≈21 min; later calls in the same session are seconds. `ghidra.startup_timeout_ms`
+  is a **runtime** setting that does **not** survive a restart — re-set it each session.
+* Helper scripts in the reconstruction repo: `tools/callers.py`, `tools/ptr_slots.py`
+  (indirect dispatch via relocations), `tools/const_xrefs.py`, `tools/pck_extract.py`.
+
+## Environment quirks (this machine)
+
+| symptom | cause | workaround |
+|---|---|---|
+| `npm EROFS` | `~/.npm` read-only | set `npm_config_cache` inside the workspace |
+| files vanish in `/tmp` | per-command tmpfs | keep artifacts in the workspace |
+| cargo cannot reach registry | `~/.cargo` read-only | `CARGO_HOME=<workspace>/.cargo-home` |
+| `git push` ssh error | `/etc/ssh/ssh_config.d` permissions | `GIT_SSH_COMMAND="ssh -F /dev/null"` |
+| REA tool call dies at 60 s | client default | `toolCallTimeoutMs: 1800000` in the registration |
 
 ## Style
 
