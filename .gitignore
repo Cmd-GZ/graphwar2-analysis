@@ -32,6 +32,11 @@ tools/
 .venv/
 venv/
 .mpl/
+.rea-runtime/
+.rea-work/
+.cargo-home/
+# 源码复原子仓库：自带 git，独立版本管理，不随主仓库提交
+gw2-rebuild/
 __pycache__/
 *.py[cod]
 *.egg-info/
