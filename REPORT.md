@@ -742,3 +742,72 @@ g = Gw()
 g.call_eval([14, 0], 0.5, 0, 0)                       # sin(0.5)
 g.call_path(g.call_parse_somehow, ...)                # 见 analysis/final_verify.py
 ```
+
+## 10. 网络协议与对局流程（后续补测）
+
+> 本节是后续工作补上的部分：原报告只覆盖"曲线怎么飞"，这里是"一局怎么跑"。
+> 详细文档在重建仓库 `Cmd-GZ/graphwar2` 的 `docs/24`～`docs/48`。
+
+### 10.1 传输层（真实抓包）
+
+| 用途 | 传输 | 编码 |
+|---|---|---|
+| LAN 房间发现 | UDP 广播 | 明文 JSON，无长度前缀 |
+| 对局通信 | TCP | `u16` 大端长度 + JSON（长度只算负载） |
+
+抓包方式是 hook 真实进程里的 libc `sendto/recvfrom/send/recv`
+（`gw2-rebuild/tools/capture_net_raw.js`）。**同一进程内客户端与服务端都在跑**，
+所以按 fd 区分方向：`fd 15` 是客户端→服务端，`fd 16` 是服务端→客户端。
+
+### 10.2 消息（实测 46 种）
+
+握手 `GameNameRequest` / `NewConnectionRequest` / `NewConnection` / `TickRequest` / `TickReply`；
+房间设置 `AxisModeInfo` / `FunctionModeInfo` / `TurnModeInfo` / `TimeModeInfo` / `GameStateInfo`；
+玩家实体 `PlayerInfo` / `TeamInfo` / `ColorInfo` / `SoldierInfo` / `EntityEffectInfo`；
+外观元数据 Name/Skin/Face/Hat/Rank 的 Request→Info 成对；
+对局内 `AddObstacle` / `PosInfo` / `LifeInfo` / `FunctionInfo` / `FunctionPoints` /
+`FunctionActive` / `QueueDestroyObstacle` / `DestroyObstacle` / `LifeQueuedDeath` /
+`EffectInfo` / `TurnInfo` / `TurnCountInfo` / `EndOfTurnInfo`。
+
+**协议里直接带着玩家写的函数原文**（`FunctionInfo.function`），
+以及修正后的文本（`corrected_function`，形如 `0.00 + 4.638`，常数就是 `start_y`）。
+
+### 10.3 两条关键规则（都经过真实数据验证）
+
+1. **弹道只被障碍挡住，士兵不挡。** 弹道"穿过"士兵（距离 ≤ 半径 0.5）即判定致死，
+   然后继续飞（`docs/30`）。
+2. **障碍被摧毁 = 在命中点挖一个半径 0.5 的洞**，不是整块移除。
+   证据是 frida hook 光栅化函数，抓到 `fill=0xFF`、`size=0.5` 的调用
+   （一局 28 次调用里有 8 次是擦除，`docs/39`）。
+
+### 10.4 时间基准
+
+- 服务端 tick 是 **精确 60 Hz**（113 个 `TickReply` 样本拟合，`docs/35`）；
+- `EndOfTurnInfo.end_of_turn_tick` 是**回合截止时刻** = 回合开始 tick + 时长，
+  六档实测：`Timer30s=1800`、`1m=3600`、`2m=7200`、`3m=10800`、`5m=18000`，
+  `TimerInf` 线上发 `0` 作哨兵（`docs/42`）；
+- `QueueDestroyObstacle` → `DestroyObstacle` 延迟 **≈165 tick**（`docs/44`）。
+
+### 10.5 状态机
+
+```text
+Setup → WaitingForFunctions → CalculatingResults → SynchronizingResults
+      → ExecutingResults → … → EndingGame → Setup
+```
+
+13 次迁移与抓包逐个相同（`docs/41`）。`TurnCountInfo` 每回合 +1，
+某队全灭时 `EndingGame` 紧跟其后（`docs/45`）。
+
+### 10.6 明确不可复现的三处（有证据）
+
+| 模块 | 不可复现的原因 |
+|---|---|
+| 关卡生成 | 随机源是 OS 熵（`getrandom` 921 次/40s，`rand/srand` 全 0），且消费顺序不可观测（`docs/40`、`docs/48`） |
+| 回合出场顺序 | 7+3 局样本里只有"队伍交替"稳定，起始人与队内顺序随机，与创建顺序无关（`docs/28`、`docs/47`） |
+
+这三处不是"没做"，而是**输入不可知**。它们之外的部分（曲线、碰撞、结算事件、
+协议编解码、tick、状态机、报文序列）都有真实数据对拍。
+
+## 11. 截至本节的验证入口
+
+重建仓库里有一份逐条可执行的清单：`gw2-rebuild/docs/49-verification-checklist.md`。
