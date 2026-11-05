@@ -45,7 +45,8 @@
               mid = (lo + hi) / 2
               弦长 L = hypot(mid - x, F(mid) - y)      # 注意 hypot 是 sqrt(a²+b²)
               若 |L - step| < 0.001: 收敛
-                  若 mode 为普通函数：再做一次半步校验（见 §3.2）
+                  若 mode 为普通函数：再做一次半步校验（见 §3.2）；
+                    校验不通过时 **lo 与 hi 同时重置**（lo = x, hi = 半步点）
                   检查 |x| ≤ 25、|y| ≤ 15、非 NaN，然后 pts.push((±mid, F(mid)))
                   x = mid ; y = F(mid) ; 进入下一个点
               否则：L > step 或 NaN -> hi = mid ；否则 lo = mid
@@ -200,8 +201,9 @@ while count < n:
         mid2 = (x + mid) * 0.5
         fm2  = f(mid2, 0, 0)
         L2   = sqrt((mid2 - x)^2 + (fm2 - y)^2)
-        if L <= L2:                               # 复核不通过
-            lo = x                                # 重置下界，继续二分
+        if not (L > L2):                          # 复核不通过（NaN 也走这里，对应 jbe）
+            lo = x                                # 重置下界
+            hi = mid2                             # ★ 同时把上界砍到 mid2（0x3c2a0a）
             continue
         if isnan(fm) or isnan(±mid): break        # 出界/NaN → 整条曲线结束
         if abs(mid) > 25: break
