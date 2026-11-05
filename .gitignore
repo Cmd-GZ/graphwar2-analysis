@@ -62,3 +62,10 @@ godot-rsc/
 godot-live/
 godot-dist/
 .agent-work/
+
+# 参考用原版二进制（Windows/Android 包等）：绝不入库
+.reference/
+*.apk
+*.apks
+*.aab
+Win/
