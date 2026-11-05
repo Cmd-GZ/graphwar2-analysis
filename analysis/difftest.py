@@ -55,6 +55,11 @@ CASES = [
     ('exp x', [(pc.EXP, 0), (pc.VAR_X, 0)]),
     ('abs x', [(pc.ABS, 0), (pc.VAR_X, 0)]),
     ('x/2', [(pc.DIVIDE, 0), (pc.VAR_X, 0), (pc.CONST, 2.0)]),
+    # 回归用例：陡峭 + 穿越对称中心。缺 hi=mid2 时在此分叉
+    # （见 gw2-rebuild/docs/91-bisection-loop.md）
+    ('abs(cos(-1.43x))*8.65', [(pc.MUL, 0), (pc.ABS, 0), (pc.COS, 0),
+                               (pc.MUL, 0), (pc.UNARY_MINUS, 0), (pc.CONST, 1.43),
+                               (pc.VAR_X, 0), (pc.CONST, 8.65)]),
 ]
 
 

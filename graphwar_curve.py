@@ -468,8 +468,13 @@ def calculate_path(tokens, x0, y0, step=STEP_DEFAULT, flip=False, ode=False):
                 mid2 = (x + mid) * HALF
                 fm2 = f(mid2)
                 ln2 = _hypot(mid2 - x, fm2 - y)
-                if ln <= ln2:
+                # 0x3c2a0a / 0x3c2a47：不通过时 **lo 与 hi 都要改**。
+                # hi = mid2 在比较之前就无条件写了，长期被漏实现（详见
+                # gw2-rebuild/docs/91-bisection-loop.md）。判据同时改成
+                # `not (ln > ln2)`，因为 `jbe` 遇 NaN 也成立。
+                if not (ln > ln2):
                     lo = x
+                    hi = mid2
                     continue
                 px = -mid if flip else mid
                 if _nan(fm) or _nan(px):
