@@ -715,7 +715,7 @@ tools/                        分析用的工具链（Ghidra 12.2 用于本文�
 ```
 
 > **实现与玩法文档不在这里**：曲线以外的逆向（坐标系、碰撞掩膜、事件协议、
-> 生命与回合、间接派发）在独立仓库 `Cmd-GZ/graphwar2` 的 `docs/` 下，
+> 生命与回合、间接派发）在独立仓库 `Cmd-GZ/graphwar2-rebuild` 的 `docs/` 下，
 > 从 `docs/00-status.md` 看起。本报告只负责"这条曲线为什么是这样"的论证。
 
 重建索引（约 2 分钟）：
@@ -748,7 +748,7 @@ g.call_path(g.call_parse_somehow, ...)                # 见 analysis/final_verif
 ## 10. 网络协议与对局流程（后续补测）
 
 > 本节是后续工作补上的部分：原报告只覆盖"曲线怎么飞"，这里是"一局怎么跑"。
-> 详细文档在重建仓库 `Cmd-GZ/graphwar2` 的 `docs/24`～`docs/48`。
+> 详细文档在重建仓库 `Cmd-GZ/graphwar2-rebuild` 的 `docs/24`～`docs/48`。
 
 ### 10.1 传输层（真实抓包）
 

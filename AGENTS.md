@@ -74,7 +74,7 @@ virtual-address space) instead. See REPORT §6 and the reconstruction repo's doc
 
 ## The reconstruction sub-repo (`gw2-rebuild/`)
 
-A **separate git repository** (`Cmd-GZ/graphwar2`) holds the source reconstruction and the
+A **separate git repository** (`Cmd-GZ/graphwar2-rebuild`) holds the source reconstruction and the
 per-topic write-ups. Rules:
 
 * It is git-ignored by *this* repo and must **never** be committed here. Verify with
