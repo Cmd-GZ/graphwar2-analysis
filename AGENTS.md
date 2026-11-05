@@ -7,7 +7,17 @@ Read this before touching anything. The repo is small; the rules are short.
 A reverse-engineered, **bit-exact** reimplementation of the trajectory sampler inside
 Graphwar II (`libgraphwarrust.so`), plus the toolchain used to recover and verify it.
 
-* `graphwar_curve.py` — **the deliverable**. Parser + evaluator + sampler + CLI.
+**Scope note (2026-11).** The overall project goal is to **reconstruct the game's source code**
+(so it can be read and analysed — e.g. to write strategy guides), not to ship a playable clone
+and not to build a third-party open version. Producing a behaviourally identical binary is only
+**step one**; source-level reconstruction (same files / modules / function boundaries) is the
+finish line. **This repo is the RE toolchain half**; the source reconstruction lives in
+`gw2-rebuild/` (see its `AGENTS.md` §0, which is the binding standard for that half —
+including the rule that *our own tests are regression protection, not reconstruction evidence*).
+
+* `graphwar_curve.py` — **this repo's deliverable** (the reference sampler, used as an oracle).
+  Parser + evaluator + sampler + CLI. It is *not* the project's final deliverable — that is the
+  reconstructed source in `gw2-rebuild/`.
   *Standard library only.* Keep it that way: no numpy, no capstone, no unicorn.
 * `REPORT.md` — the authoritative write-up (Chinese). If behaviour and report disagree,
   the behaviour wins and the report is a bug.
@@ -83,6 +93,11 @@ per-topic write-ups. Rules:
   only the manifest is committed. Do not push game assets to a public remote.
 * Its `docs/00-status.md` is the one-page state of the world; `docs/15-end-to-end.md` walks
   a shot from typed text to a dead soldier; `docs/16-reproduce.md` is the verification recipe.
+* **Its `AGENTS.md` §0 is the binding standard for that half** — read it before judging any work
+  there. Two rules that differ from habits in *this* repo: (a) `cargo test` / client self-test
+  counts are **regression protection, never reconstruction evidence**; (b) the client under
+  `client/` is a **rewritten imitation**, not the original source — the original's UI controllers
+  are Rust modules inside the `.so`, so "it looks right" proves nothing.
 
 ## REA toolchain (installed 2026-11)
 
@@ -130,6 +145,7 @@ observation → REA pseudocode (only when the first three cannot give you the st
 | cargo cannot reach registry | `~/.cargo` read-only | `CARGO_HOME=<workspace>/.cargo-home` |
 | `git push` ssh error | `/etc/ssh/ssh_config.d` permissions | `GIT_SSH_COMMAND="ssh -F /dev/null"` |
 | REA tool call dies at 60 s | client default | `toolCallTimeoutMs: 1800000` in the registration |
+| stale build artifact silently used | several tools look for binaries in fixed places | prefer `CARGO_TARGET_DIR`; delete stale `target/`; see `gw2-rebuild/AGENTS.md` "改了但没生效" |
 
 ## Style
 
