@@ -95,6 +95,32 @@ per-topic write-ups. Rules:
 * Helper scripts in the reconstruction repo: `tools/callers.py`, `tools/ptr_slots.py`
   (indirect dispatch via relocations), `tools/const_xrefs.py`, `tools/pck_extract.py`.
 
+**What REA actually is**: an MCP *bridge* that exposes reverse-engineering engines
+(Ghidra, Hopper, Rizin, Frida, …) as agent tools. It is not an engine itself — so every
+quirk below is a property of the **bridge**, and every conclusion still has to be justified
+by evidence from the engine or the artifact.
+
+**Known bridge trap (hit for real in 2026-11)**: pass `procedure_pseudo_code` /
+`analyze_function` an address that is **not a real function entry** and it does **not**
+error — it silently reinterprets the value as a *file offset* (`+0x101000`) and returns a
+**completely unrelated function**. Observed: `0x6ea6dc` (a vaddr that had been
+double-offset by `0x100000`) returned an SSE image-filter routine that looked plausible.
+
+Guard rails:
+1. Call `procedure_info` or `resolve_containing_procedure` **first** to prove the address
+   is a function entry.
+2. Check the returned `selection.mapped_address` — if it differs from the requested
+   address, the result is **not** about your function; discard it.
+3. Cross-check at least one decisive instruction with `objdump` before believing a
+   decompiled conclusion. (Every solid result in this repo — `hi = mid2`, the 25 s budget,
+   the single-parent factory — came from `objdump` or runtime observation, not pseudocode.)
+4. The Ghidra session is **shared**: `start_gdb_session` / `gdb_console` / `open_binary`
+   retire the active analysis session, so never run them while another agent is reading
+   assembly.
+
+**Preferred order of evidence**: existing docs → `objdump` (exact bytes) → Frida runtime
+observation → REA pseudocode (only when the first three cannot give you the structure).
+
 ## Environment quirks (this machine)
 
 | symptom | cause | workaround |
